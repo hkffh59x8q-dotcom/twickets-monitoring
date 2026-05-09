@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Twickets">
+<meta name="theme-color" content="#0a0a0a">
+<title>Twickets Monitor</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #080808;
+  --surface: #111113;
+  --border: #1e1e22;
+  --accent: #c8ff00;
+  --accent-dim: #8ab300;
+  --red: #ff3c3c;
+  --green: #00ffaa;
+  --text: #ebebeb;
+  --muted: #4a4a52;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  overscroll-behavior: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+}
+
+/* ── HEADER ── */
+.app-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.app-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 900;
+  font-size: 1.65rem;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.app-title span {
+  display: block;
+  font-size: 0.55rem;
+  font-family: 'DM Mono', monospace;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+.header-pulse {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+}
+.dot.on { background: var(--green); animation: blink 1.6s ease-in-out infinite; }
+.dot.alert { background: var(--red); animation: blink 0.5s ease-in-out infinite; }
+
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.tab {
+  flex: 1;
+  padding: 12px 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--muted);
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── PAGES ── */
+.page { display: none; flex: 1; overflow-y: auto; padding: 20px; }
+.page.active { display: flex; flex-direction: column; gap: 16px; }
+
+/* ── MONITOR PAGE ── */
+.big-toggle {
+  width: 100%;
+  padding: 20px;
+  border-radius: 12px;
+  border: none;
+  font-family: 'Syne', sans-serif;
+  font-weight: 900;
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.big-toggle.start {
+  background: var(--accent);
+  color: #000;
+  box-shadow: 0 0 40px rgba(200,255,0,0.15);
+}
+.big-toggle.start:active { transform: scale(0.97); }
+
+.big-toggle.stop {
+  background: transparent;
+  color: var(--red);
+  border: 1.5px solid var(--red);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.stat-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 10px;
+  text-align: center;
+}
+
+.stat-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--accent);
+  line-height: 1;
+  display: block;
+}
+
+.stat-lbl {
+  font-size: 0.58rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 4px;
+  display: block;
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.75rem;
+}
+
+#statusMsg { flex: 1; color: var(--muted); }
+#nextCheck { font-size: 0.68rem; color: var(--muted); }
+
+.section-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: -4px;
+}
+
+/* ── TICKET CARDS ── */
+.ticket-list { display: flex; flex-direction: column; gap: 10px; }
+
+.empty-msg {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  line-height: 1.8;
+}
+
+.tcard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s;
+  animation: popIn 0.2s ease;
+}
+
+.tcard.new-card {
+  border-color: var(--accent);
+  background: #0f1200;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.tcard-qty {
+  font-family: 'Syne', sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--accent);
+  min-width: 36px;
+  text-align: center;
+  line-height: 1;
+}
+
+.tcard-body { flex: 1; min-width: 0; }
+.tcard-price { font-size: 0.88rem; color: var(--text); font-weight: 500; }
+.tcard-meta { font-size: 0.65rem; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.tcard-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+
+.badge-new {
+  font-size: 0.55rem;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: #000;
+}
+
+.buy-btn {
+  font-size: 0.65rem;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+/* ── SETUP PAGE ── */
+.setup-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.setup-section h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.howto {
+  background: #0a0a00;
+  border-left: 2px solid var(--accent);
+  padding: 12px 14px;
+  font-size: 0.7rem;
+  line-height: 1.9;
+  color: #999;
+  border-radius: 0 6px 6px 0;
+}
+.howto strong { color: var(--accent); }
+.howto code { background: #1a1a00; color: var(--green); padding: 1px 5px; border-radius: 3px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+
+.field label {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.field input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.82rem;
+  padding: 12px 14px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+}
+.field input:focus { border-color: var(--accent); }
+.field input::placeholder { color: var(--muted); }
+
+.save-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.save-btn:active { opacity: 0.8; }
+
+.install-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.install-box h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.install-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  color: #999;
+}
+
+.step-num {
+  font-family: 'Syne', sans-serif;
+  font-weight: 900;
+  font-size: 0.9rem;
+  color: var(--accent);
+  min-width: 20px;
+  flex-shrink: 0;
+}
+
+/* ── LOG PAGE ── */
+#logLines {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 0.68rem;
+  line-height: 2;
+  color: var(--muted);
+  flex: 1;
+  min-height: 200px;
+}
+
+.ll { display: block; }
+.ll.ok { color: var(--green); }
+.ll.err { color: var(--red); }
+.ll.new { color: var(--accent); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="app-header">
+  <div class="app-title">
+    TWICKETS
+    <span>Ticket Monitor</span>
+  </div>
+  <div class="header-pulse">
+    <div class="dot" id="headerDot"></div>
+    <span id="headerStatus">IDLE</span>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('monitor', this)">Monitor</button>
+  <button class="tab" onclick="switchTab('tickets', this)">Tickets</button>
+  <button class="tab" onclick="switchTab('setup', this)">Setup</button>
+  <button class="tab" onclick="switchTab('log', this)">Log</button>
+</div>
+
+<!-- MONITOR PAGE -->
+<div class="page active" id="page-monitor">
+  <button class="big-toggle start" id="toggleBtn" onclick="toggleMonitor()">
+    <span>▶</span> Start Monitoring
+  </button>
+
+  <div class="stat-grid">
+    <div class="stat-box"><span class="stat-num" id="s-checks">0</span><span class="stat-lbl">Checks</span></div>
+    <div class="stat-box"><span class="stat-num" id="s-found">0</span><span class="stat-lbl">Available</span></div>
+    <div class="stat-box"><span class="stat-num" id="s-new">0</span><span class="stat-lbl">New Found</span></div>
+  </div>
+
+  <div class="status-pill">
+    <div class="dot" id="statusDot"></div>
+    <span id="statusMsg">Not running — tap Start</span>
+    <span id="nextCheck"></span>
+  </div>
+
+  <div class="section-label">Latest Tickets</div>
+  <div class="ticket-list" id="previewFeed">
+    <div class="empty-msg">No tickets spotted yet.<br>Tap Start to begin watching.</div>
+  </div>
+</div>
+
+<!-- TICKETS PAGE -->
+<div class="page" id="page-tickets">
+  <div class="section-label">All Detected Tickets This Session</div>
+  <div class="ticket-list" id="fullFeed">
+    <div class="empty-msg">No tickets detected yet.</div>
+  </div>
+</div>
+
+<!-- SETUP PAGE -->
+<div class="page" id="page-setup">
+  <div class="setup-section">
+    <h3>API Key</h3>
+    <div class="howto">
+      <strong>How to get your key (30 secs):</strong><br>
+      1. Open <strong>twickets.live</strong> on desktop<br>
+      2. DevTools → <strong>Network</strong> tab → refresh<br>
+      3. Filter requests by <code>catalogue</code><br>
+      4. Click the request → copy <code>api_key=…</code> from URL<br>
+      5. Paste below and tap Save
+    </div>
+    <div class="field">
+      <label>Twickets API Key</label>
+      <input type="text" id="apiKeyInput" placeholder="Paste your api_key here…" inputmode="text">
+    </div>
+    <div class="field">
+      <label>Event ID</label>
+      <input type="text" id="eventIdInput" value="1940319280918695936">
+    </div>
+    <button class="save-btn" onclick="saveSettings()">Save Settings</button>
+  </div>
+
+  <div class="install-box">
+    <h3>Add to Home Screen</h3>
+    <div class="install-step"><span class="step-num">1</span><span><strong>iPhone:</strong> Tap the Share button in Safari → "Add to Home Screen" → Add</span></div>
+    <div class="install-step"><span class="step-num">2</span><span><strong>Android:</strong> Tap the ⋮ menu in Chrome → "Add to Home screen" → Install</span></div>
+    <div class="install-step"><span class="step-num">3</span><span>The app icon will appear on your home screen — tap it to open like a native app</span></div>
+    <div class="install-step"><span class="step-num">4</span><span>Allow notifications when prompted — this is how you'll be alerted to tickets!</span></div>
+  </div>
+</div>
+
+<!-- LOG PAGE -->
+<div class="page" id="page-log">
+  <div class="section-label">Activity Log</div>
+  <div id="logLines"><span class="ll">Waiting for activity…</span></div>
+</div>
+
+<script>
+// ── STATE ──
+let timer = null, cdTimer = null;
+let running = false;
+let checks = 0, newCount = 0;
+let knownIds = new Set();
+let allTickets = [];
+let audioCtx = null;
+const INTERVAL = 5000;
+const EVENT_URL = 'https://www.twickets.live/en/event/1940319280918695936#sort=FirstListed&typeFilter=Any&qFilter=All';
+
+// Load saved settings (with hardcoded defaults)
+const DEFAULT_KEY = '83d6ec0c-54bb-4da3-b2a1-f3cb47b984f1';
+const DEFAULT_EVENT = '1940319280918695936';
+const savedKey = localStorage.getItem('tw_apikey') || DEFAULT_KEY;
+const savedEvent = localStorage.getItem('tw_eventid') || DEFAULT_EVENT;
+// Pre-save defaults so they're always available
+if (!localStorage.getItem('tw_apikey')) localStorage.setItem('tw_apikey', DEFAULT_KEY);
+if (!localStorage.getItem('tw_eventid')) localStorage.setItem('tw_eventid', DEFAULT_EVENT);
+document.getElementById('apiKeyInput').value = savedKey;
+document.getElementById('eventIdInput').value = savedEvent;
+
+// Request notification permission
+if ('Notification' in window) Notification.requestPermission();
+
+// ── TABS ──
+function switchTab(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+// ── SETTINGS ──
+function saveSettings() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const eid = document.getElementById('eventIdInput').value.trim();
+  localStorage.setItem('tw_apikey', key);
+  localStorage.setItem('tw_eventid', eid);
+  const btn = document.querySelector('.save-btn');
+  btn.textContent = '✓ Saved!';
+  setTimeout(() => btn.textContent = 'Save Settings', 1500);
+  addLog('Settings saved', 'ok');
+}
+
+// ── AUDIO ──
+function playBeep() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    [[880,0],[1100,0.15],[1320,0.3]].forEach(([freq, delay]) => {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.type = 'sine'; o.frequency.value = freq;
+      const t = audioCtx.currentTime + delay;
+      g.gain.setValueAtTime(0.35, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+      o.start(t); o.stop(t + 0.45);
+    });
+  } catch(e) {}
+}
+
+// ── NOTIFICATIONS ──
+function pushNotif(title, body, url) {
+  playBeep();
+  if (Notification.permission === 'granted') {
+    const n = new Notification(title, { body, badge: '', vibrate: [200,100,200] });
+    if (url) n.onclick = () => { window.open(url, '_blank'); n.close(); };
+  }
+}
+
+// ── LOG ──
+function addLog(msg, type='') {
+  const el = document.getElementById('logLines');
+  const ts = new Date().toLocaleTimeString();
+  const span = document.createElement('span');
+  span.className = 'll' + (type ? ' ' + type : '');
+  span.textContent = `[${ts}] ${msg}`;
+  // Clear placeholder
+  if (el.querySelector('.ll:not([class*=" "])') && el.children.length === 1) el.innerHTML = '';
+  el.prepend(document.createElement('br'));
+  el.prepend(span);
+  while (el.children.length > 80) el.removeChild(el.lastChild);
+}
+
+// ── STATUS UI ──
+function setRunningUI(on) {
+  const btn = document.getElementById('toggleBtn');
+  const hDot = document.getElementById('headerDot');
+  const hStatus = document.getElementById('headerStatus');
+  if (on) {
+    btn.className = 'big-toggle stop';
+    btn.innerHTML = '<span>■</span> Stop';
+    hDot.className = 'dot on';
+    hStatus.textContent = 'LIVE';
+  } else {
+    btn.className = 'big-toggle start';
+    btn.innerHTML = '<span>▶</span> Start Monitoring';
+    hDot.className = 'dot';
+    hStatus.textContent = 'IDLE';
+    document.getElementById('nextCheck').textContent = '';
+    document.getElementById('statusDot').className = 'dot';
+    document.getElementById('statusMsg').textContent = 'Not running — tap Start';
+  }
+}
+
+function updateStats() {
+  document.getElementById('s-checks').textContent = checks;
+  document.getElementById('s-found').textContent = allTickets.length;
+  document.getElementById('s-new').textContent = newCount;
+}
+
+function startCountdown() {
+  let s = INTERVAL / 1000;
+  clearInterval(cdTimer);
+  const el = document.getElementById('nextCheck');
+  el.textContent = `${s}s`;
+  cdTimer = setInterval(() => {
+    s--;
+    el.textContent = s > 0 ? `${s}s` : '…';
+    if (s <= 0) clearInterval(cdTimer);
+  }, 1000);
+}
+
+// ── RENDER TICKET ──
+function makeCard(t, isNew) {
+  const qty = t.numTickets || t.quantity || '?';
+  const price = t.totalPrice ? `£${(t.totalPrice/100).toFixed(2)}`
+    : t.price ? `£${(t.price/100).toFixed(2)}` : 'Price TBC';
+  const id = t.id || t.listingId || '';
+  const url = id ? `https://www.twickets.live/app/block/${id},${qty}` : EVENT_URL;
+  const meta = [t.event?.name, t.venue?.name].filter(Boolean).join(' · ') || 'Twickets listing';
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  a.className = 'tcard' + (isNew ? ' new-card' : '');
+  a.innerHTML = `
+    <div class="tcard-qty">${qty}</div>
+    <div class="tcard-body">
+      <div class="tcard-price">${price} · ${qty} ticket${qty!=1?'s':''}</div>
+      <div class="tcard-meta">${meta}</div>
+    </div>
+    <div class="tcard-actions">
+      ${isNew ? '<span class="badge-new">NEW</span>' : ''}
+      <span class="buy-btn">Buy →</span>
+    </div>
+  `;
+  if (isNew) setTimeout(() => a.classList.remove('new-card'), 20000);
+  return a;
+}
+
+function renderFeeds(newListings) {
+  // Clear empty states
+  ['previewFeed','fullFeed'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el.querySelector('.empty-msg')) el.innerHTML = '';
+  });
+
+  newListings.forEach(t => {
+    const card1 = makeCard(t, true);
+    const card2 = makeCard(t, true);
+    document.getElementById('previewFeed').prepend(card1);
+    document.getElementById('fullFeed').prepend(card2);
+    // Trim preview to 5
+    const preview = document.getElementById('previewFeed');
+    while (preview.children.length > 5) preview.removeChild(preview.lastChild);
+  });
+}
+
+// ── FETCH ──
+async function doCheck() {
+  const apiKey = localStorage.getItem('tw_apikey') || '';
+  const eventId = localStorage.getItem('tw_eventid') || '1940319280918695936';
+
+  if (!apiKey) {
+    addLog('No API key — go to Setup tab', 'err');
+    document.getElementById('statusMsg').textContent = 'No API key — check Setup tab';
+    return;
+  }
+
+  checks++;
+  document.getElementById('statusDot').className = 'dot on';
+  document.getElementById('statusMsg').textContent = `Checking… (poll #${checks})`;
+  updateStats();
+
+  const url = 'https://damp-silence-2d5c.zz6whrf74j.workers.dev/';
+
+  try {
+    const res = await fetch(url);
+    if (res.status === 401 || res.status === 403) {
+      addLog(`Auth error — check API key`, 'err');
+      document.getElementById('statusMsg').textContent = 'Auth error — update API key in Setup';
+      return;
+    }
+    if (!res.ok) {
+      addLog(`HTTP ${res.status}`, 'err');
+      return;
+    }
+
+    const data = await res.json();
+    const listings = data.listings || data.results || data.items || (Array.isArray(data) ? data : []);
+
+    const freshNew = listings.filter(t => {
+      const id = t.id || t.listingId || JSON.stringify(t).slice(0,40);
+      if (!knownIds.has(id)) { knownIds.add(id); return true; }
+      return false;
+    });
+
+    allTickets = listings;
+
+    if (freshNew.length > 0) {
+      newCount += freshNew.length;
+      document.getElementById('headerDot').className = 'dot alert';
+      document.getElementById('statusDot').className = 'dot alert';
+      document.getElementById('statusMsg').textContent = `🎟 ${freshNew.length} NEW ticket(s) found!`;
+      freshNew.forEach(t => {
+        const qty = t.numTickets || t.quantity || '?';
+        const price = t.totalPrice ? `£${(t.totalPrice/100).toFixed(2)}` : 'Price TBC';
+        const id = t.id || '';
+        const url = id ? `https://www.twickets.live/app/block/${id},${qty}` : EVENT_URL;
+        pushNotif(`🎟 ${qty} ticket${qty!=1?'s':''} on Twickets!`, `${price} — tap to buy now`, url);
+        addLog(`NEW: ${qty}x @ ${price}`, 'new');
+      });
+      renderFeeds(freshNew);
+      setTimeout(() => {
+        document.getElementById('headerDot').className = 'dot on';
+        document.getElementById('statusDot').className = 'dot on';
+      }, 5000);
+    } else {
+      document.getElementById('statusDot').className = 'dot on';
+      document.getElementById('statusMsg').textContent = listings.length
+        ? `Watching — ${listings.length} listing(s) active`
+        : `Watching — no tickets listed yet`;
+      addLog(`Check #${checks}: ${listings.length} listing(s), ${freshNew.length} new`, 'ok');
+    }
+    updateStats();
+
+  } catch(e) {
+    addLog(`Error: ${e.message}`, 'err');
+    document.getElementById('statusMsg').textContent = 'Network error — retrying…';
+  }
+}
+
+// ── TOGGLE ──
+function toggleMonitor() {
+  if (running) {
+    running = false;
+    clearInterval(timer);
+    clearInterval(cdTimer);
+    timer = null;
+    setRunningUI(false);
+    addLog('Monitor stopped', 'err');
+  } else {
+    const apiKey = localStorage.getItem('tw_apikey') || document.getElementById('apiKeyInput').value.trim();
+    if (!apiKey) {
+      switchTab('setup', document.querySelectorAll('.tab')[2]);
+      setTimeout(() => alert('Please enter your API key in the Setup tab first.'), 100);
+      return;
+    }
+    running = true;
+    setRunningUI(true);
+    addLog('Monitor started — polling every 5s', 'ok');
+    doCheck();
+    startCountdown();
+    timer = setInterval(() => { doCheck(); startCountdown(); }, INTERVAL);
+  }
+}
+
+// ── SERVICE WORKER (inline via blob) ──
+// Keeps the app "alive" for background sync on supported browsers
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    self.addEventListener('install', e => self.skipWaiting());
+    self.addEventListener('activate', e => clients.claim());
+    self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => new Response(''))));
+  `;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
+</script>
+</body>
+</html>
